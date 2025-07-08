@@ -1,0 +1,107 @@
+{% load static %}
+{% extends "base.html" %}
+
+{% block title %}Payment Receipt{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .receipt-container, .receipt-container * {
+            visibility: visible;
+        }
+        .receipt-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .no-print {
+            display: none !important;
+        }
+    }
+    .receipt-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+    }
+    .receipt-header {
+        border-bottom: 2px solid #333;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .receipt-footer {
+        border-top: 2px solid #333;
+        padding-top: 10px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="receipt-container">
+        <div class="text-center mb-4">
+            <h2 class="receipt-header">PHENOM VENTURES LTD</h2>
+            <p>Official Payment Receipt</p>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <p><strong>Receipt No:</strong> {{ transaction.receipt_number }}</p>
+                <p><strong>Date:</strong> {{ transaction.date|date:"F j, Y" }}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <p><strong>Client:</strong> {{ transaction.client.name }}</p>
+                <p><strong>Account:</strong> {{ transaction.client.account_name }}</p>
+            </div>
+        </div>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount (KSh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ transaction.description|default:"Internet Subscription Payment" }}</td>
+                    <td>{{ transaction.amount|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ transaction.amount|intcomma }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="receipt-footer">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Payment Method:</strong> {{ transaction.get_payment_method_display }}</p>
+                    {% if transaction.mpesa_code %}
+                    <p><strong>MPESA Code:</strong> {{ transaction.mpesa_code }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>Thank you for your business!</p>
+                    <p>Authorized Signature: ___________________</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 no-print">
+        <button onclick="window.print()" class="btn btn-primary me-2">
+            <i class="fas fa-print me-1"></i> Print Receipt
+        </button>
+        <a href="mailto:{{ transaction.client.email }}?subject=Payment Receipt - {{ transaction.receipt_number }}" class="btn btn-success">
+            <i class="fas fa-envelope me-1"></i> Email Receipt
+        </a>
+    </div>
+</div>
+{% endblock %}

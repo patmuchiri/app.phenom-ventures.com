@@ -1,0 +1,513 @@
+{% extends "billing_app/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Client Management - Phenom Ventures{% endblock %}
+
+{% block extra_css %}
+<style>
+    .client-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .client-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .client-card:hover::before {
+        opacity: 1;
+    }
+    
+    .client-card.active {
+        border-left-color: var(--success-color);
+    }
+    
+    .client-card.inactive {
+        border-left-color: var(--danger-color);
+    }
+    
+    .client-card.business {
+        border-left-color: var(--info-color);
+    }
+    
+    .client-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid;
+        transition: all 0.3s ease;
+    }
+    
+    .client-card:hover .client-avatar {
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .status-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.8rem;
+        padding: 0.35em 0.65em;
+    }
+    
+    .package-badge {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+    }
+    
+    /* Advanced filter panel */
+    .filter-panel {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    
+    .filter-panel.show {
+        max-height: 500px;
+    }
+    
+    /* Custom checkbox */
+    .custom-checkbox .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+    }
+    
+    /* Hover actions */
+    .hover-actions {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    tr:hover .hover-actions {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Client Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-secondary" id="filterToggle">
+                <i class="fas fa-filter me-1"></i> Filters
+            </button>
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-download me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-dark">
+                <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2"></i> Excel</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i> CSV</a></li>
+            </ul>
+        </div>
+        <a href="{% url 'client_create' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-user-plus me-1"></i> New Client
+        </a>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="card mb-4 filter-panel" id="filterPanel">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">Status</label>
+                <select class="form-select" id="statusFilter" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="typeFilter" class="form-label">Client Type</label>
+                <select class="form-select" id="typeFilter" name="client_type">
+                    <option value="">All Types</option>
+                    <option value="individual" {% if request.GET.client_type == 'individual' %}selected{% endif %}>Individual</option>
+                    <option value="business" {% if request.GET.client_type == 'business' %}selected{% endif %}>Business</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="packageFilter" class="form-label">Package</label>
+                <select class="form-select" id="packageFilter" name="package">
+                    <option value="">All Packages</option>
+                    {% for package in packages %}
+                    <option value="{{ package.id }}" {% if request.GET.package == package.id|stringformat:"s" %}selected{% endif %}>{{ package.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="searchInput" class="form-label">Search</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" name="q" value="{{ request.GET.q }}" placeholder="Name, Email, Phone...">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'client_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync-alt me-1"></i> Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Toggle -->
+<div class="d-flex justify-content-between mb-3">
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-secondary active" id="cardViewBtn">
+            <i class="fas fa-th-large me-1"></i> Cards
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="tableViewBtn">
+            <i class="fas fa-table me-1"></i> Table
+        </button>
+    </div>
+    <div class="d-flex align-items-center">
+        <span class="me-2 text-muted">{{ paginator.count }} clients found</span>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-sort me-1"></i> Sort
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="?sort=name">Name (A-Z)</a></li>
+                <li><a class="dropdown-item" href="?sort=-name">Name (Z-A)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=package">Package</a></li>
+                <li><a class="dropdown-item" href="?sort=-package">Package (Reverse)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="?sort=join_date">Newest</a></li>
+                <li><a class="dropdown-item" href="?sort=-join_date">Oldest</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Card View -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-4" id="cardView">
+    {% for client in clients %}
+    <div class="col">
+        <div class="card client-card h-100 {% if client.is_active %}active{% else %}inactive{% endif %} {% if client.client_type == 'business' %}business{% endif %}">
+            <span class="status-badge badge {% if client.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                {% if client.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+            <div class="card-body text-center pt-4">
+                <img src="{% if client.photo %}{{ client.photo.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                     class="client-avatar mb-3 {% if client.client_type == 'business' %}border-info{% else %}border-primary{% endif %}" 
+                     alt="{{ client.name }}">
+                <h5 class="card-title mb-1">{{ client.name }}</h5>
+                <p class="text-muted mb-2">
+                    {% if client.client_type == 'business' %}
+                    <i class="fas fa-building me-1"></i> Business
+                    {% else %}
+                    <i class="fas fa-user me-1"></i> Individual
+                    {% endif %}
+                </p>
+                <span class="badge package-badge mb-3">{{ client.package.name }}</span>
+                <ul class="list-unstyled text-start">
+                    <li class="mb-1"><i class="fas fa-envelope me-2 text-muted"></i> {{ client.email|truncatechars:20 }}</li>
+                    <li class="mb-1"><i class="fas fa-phone me-2 text-muted"></i> {{ client.contact }}</li>
+                    <li class="mb-1"><i class="fas fa-network-wired me-2 text-muted"></i> {{ client.ip_address }}</li>
+                    <li><i class="fas fa-calendar me-2 text-muted"></i> Joined {{ client.join_date|date:"M Y" }}</li>
+                </ul>
+            </div>
+            <div class="card-footer bg-transparent border-0 d-flex justify-content-center pb-3">
+                <div class="btn-group btn-group-sm">
+                    <a href="{% url 'client_detail' client.pk %}" class="btn btn-outline-primary" title="View">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="{% url 'client_update' client.pk %}" class="btn btn-outline-secondary" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </a>
+					<a href="{% url 'billing_app:client_payment_instructions' client.pk %}" class="btn btn-outline-success" title="Payment">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </a>
+                    <form method="post" action="{% url 'client_toggle_status' client.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-{% if client.is_active %}danger{% else %}success{% endif %}" 
+                                title="{% if client.is_active %}Deactivate{% else %}Activate{% endif %}">
+                            <i class="fas fa-power-off"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No clients found</h4>
+                <p class="text-muted">Try adjusting your search or filters</p>
+                <a href="{% url 'client_create' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-user-plus me-1"></i> Add New Client
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Table View (Hidden by default) -->
+<div class="card mb-4 d-none" id="tableView">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="40">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </div>
+                        </th>
+                        <th>Client</th>
+                        <th>Contact</th>
+                        <th>Package</th>
+                        <th>IP Address</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="{{ client.id }}">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="{% if client.photo %}{{ client.photo.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                     class="rounded-circle me-2" width="32" height="32" alt="{{ client.name }}">
+                                <div>
+                                    <div class="fw-bold">{{ client.name }}</div>
+                                    <small class="text-muted">{{ client.email|truncatechars:20 }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ client.contact }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ client.package.name }}</span>
+                        </td>
+                        <td>
+                            <code>{{ client.ip_address }}</code>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill {% if client.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if client.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ client.join_date|date:"M d, Y" }}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm hover-actions">
+                                <a href="{% url 'client_detail' client.pk %}" class="btn btn-outline-primary btn-sm" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'client_update' client.pk %}" class="btn btn-outline-secondary btn-sm" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="post" action="{% url 'client_toggle_status' client.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-{% if client.is_active %}danger{% else %}success{% endif %} btn-sm" 
+                                            title="{% if client.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No clients found</h4>
+                            <p class="text-muted">Try adjusting your search or filters</p>
+                            <a href="{% url 'client_create' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-user-plus me-1"></i> Add New Client
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Panel -->
+<div class="card mb-4 d-none" id="bulkActionsPanel">
+    <div class="card-body py-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <span class="me-3"><span id="selectedCount">0</span> clients selected</span>
+                <div class="dropdown me-2">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-bolt me-1"></i> Actions
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2"></i> Send Email</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sms me-2"></i> Send SMS</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-check-circle me-2 text-success"></i> Activate</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-times-circle me-2 text-danger"></i> Deactivate</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash-alt me-2"></i> Delete</a></li>
+                    </ul>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" id="clearSelection">
+                <i class="fas fa-times me-1"></i> Clear
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if paginator.num_pages > 1 %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if clients.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ clients.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in paginator.page_range %}
+            {% if num > clients.number|add:'-3' and num < clients.number|add:'3' %}
+                <li class="page-item {% if num == clients.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if clients.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ clients.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Toggle filter panel
+    document.getElementById('filterToggle').addEventListener('click', function() {
+        document.getElementById('filterPanel').classList.toggle('show');
+    });
+    
+    // Toggle between card and table view
+    const cardViewBtn = document.getElementById('cardViewBtn');
+    const tableViewBtn = document.getElementById('tableViewBtn');
+    const cardView = document.getElementById('cardView');
+    const tableView = document.getElementById('tableView');
+    
+    cardViewBtn.addEventListener('click', function() {
+        this.classList.add('active');
+        tableViewBtn.classList.remove('active');
+        cardView.classList.remove('d-none');
+        tableView.classList.add('d-none');
+        localStorage.setItem('clientViewPreference', 'cards');
+    });
+    
+    tableViewBtn.addEventListener('click', function() {
+        this.classList.add('active');
+        cardViewBtn.classList.remove('active');
+        tableView.classList.remove('d-none');
+        cardView.classList.add('d-none');
+        localStorage.setItem('clientViewPreference', 'table');
+    });
+    
+    // Check for saved view preference
+    if (localStorage.getItem('clientViewPreference') === 'table') {
+        tableViewBtn.click();
+    }
+    
+    // Bulk selection functionality
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('tbody .form-check-input');
+    const bulkActionsPanel = document.getElementById('bulkActionsPanel');
+    const selectedCount = document.getElementById('selectedCount');
+    const clearSelection = document.getElementById('clearSelection');
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBulkActions();
+    });
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+    
+    function updateBulkActions() {
+        const selected = document.querySelectorAll('tbody .form-check-input:checked');
+        selectedCount.textContent = selected.length;
+        
+        if (selected.length > 0) {
+            bulkActionsPanel.classList.remove('d-none');
+        } else {
+            bulkActionsPanel.classList.add('d-none');
+        }
+    }
+    
+    clearSelection.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        selectAll.checked = false;
+        updateBulkActions();
+    });
+    
+    // Initialize tooltips
+    $(function () {
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+    
+    // Smooth animations for table rows
+    document.querySelectorAll('tbody tr').forEach((row, index) => {
+        row.style.transitionDelay = `${index * 0.05}s`;
+        row.classList.add('animate__animated', 'animate__fadeIn');
+    });
+</script>
+{% endblock %}

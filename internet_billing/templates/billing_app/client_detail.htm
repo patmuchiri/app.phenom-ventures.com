@@ -1,0 +1,490 @@
+{% extends "billing_app/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ client.name }} - Phenom Ventures{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Maintain all existing styles */
+    .client-profile-header {
+        background: linear-gradient(135deg, rgba(108, 92, 231, 0.1) 0%, rgba(253, 121, 168, 0.1) 100%);
+        border-radius: 12px;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Keep all other CSS classes from original template */
+    /* ... */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Enhanced Client Profile Header -->
+    <div class="client-profile-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-auto text-center text-md-start mb-3 mb-md-0">
+                <img src="{% if client.photo %}{{ client.photo.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                     alt="{{ client.name }}" 
+                     class="client-avatar-lg mb-2">
+            </div>
+            <div class="col-md">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                    <div>
+                        <h2 class="mb-1">{{ client.name }}</h2>
+                        <div class="d-flex flex-wrap align-items-center">
+                            <span class="badge bg-{% if client.is_active %}success{% else %}danger{% endif %} me-2 mb-1">
+                                {% if client.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                            <span class="text-muted mb-1">
+                                <i class="fas fa-user-circle me-1"></i> {{ client.account_name }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-2 mt-md-0">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'client_update' client.id %}" class="btn btn-primary">
+                                <i class="fas fa-edit me-1"></i> Edit
+                            </a>
+                            <a href="{% url 'transaction_create' %}?client_pk={{ client.pk }}" class="btn btn-success">
+                                <i class="fas fa-money-bill-wave me-1"></i> Payment
+                            </a>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#emailModal">
+                                        <i class="fas fa-envelope me-2"></i> Send Email
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#smsModal">
+                                        <i class="fas fa-sms me-2"></i> Send SMS
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                        <i class="fas fa-trash-alt me-2"></i> Delete
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-phone-alt fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Phone</div>
+                                <div class="fw-bold">{{ client.contact }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-envelope fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Email</div>
+                                <div class="fw-bold">{{ client.email }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-network-wired fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">IP Address</div>
+                                <div class="fw-bold">
+                                    <code>{{ client.ip_address }}</code>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2 py-0 copy-ip" data-bs-toggle="tooltip" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <ul class="nav nav-tabs mb-4" id="clientTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                <i class="fas fa-info-circle me-2"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="subscriptions-tab" data-bs-toggle="tab" data-bs-target="#subscriptions" type="button" role="tab">
+                <i class="fas fa-box-open me-2"></i> Subscriptions
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+                <i class="fas fa-money-bill-wave me-2"></i> Payments
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
+                <i class="fas fa-exchange-alt me-2"></i> Transactions
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="clientTabsContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Network Information Card -->
+                    <div class="card detail-card mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <i class="fas fa-network-wired me-2"></i> Network Information
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">Package Name</div>
+                                    <div class="fw-bold">{{ client.package_name }}</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">Package Price</div>
+                                    <div class="fw-bold">KES {{ client.package_price|intcomma }}/month</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">Download Speed</div>
+                                    <div class="fw-bold">{{ client.download_limit }}</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">Upload Speed</div>
+                                    <div class="fw-bold">{{ client.upload_limit }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Balance Card -->
+                    <div class="card detail-card mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <i class="fas fa-wallet me-2"></i> Account Balance
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h3 class="mb-0">KES {{ client.account_balance|intcomma }}</h3>
+                                    <small class="text-muted">Current balance</small>
+                                </div>
+                                <div>
+                                    <a href="{% url 'transaction_create' %}?client_pk={{ client.pk }}" class="btn btn-success">
+                                        <i class="fas fa-plus-circle me-1"></i> Add Funds
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- Quick Stats Card -->
+                    <div class="card detail-card mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <i class="fas fa-chart-pie me-2"></i> Quick Stats
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="info-label">Total Payments</div>
+                                <div class="fw-bold">KES {{ payments_total|default:0|intcomma }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="info-label">Last Payment</div>
+                                <div class="fw-bold">
+                                    {% if payments %}
+                                    {{ payments.0.payment_date|date:"M d, Y" }}
+                                    {% else %}
+                                    Never
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="info-label">Client Since</div>
+                                <div class="fw-bold">{{ client.created_at|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Subscriptions Tab -->
+        <div class="tab-pane fade" id="subscriptions" role="tabpanel">
+            <div class="card detail-card">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-box-open me-2"></i> Subscription History</span>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newSubscriptionModal">
+                        <i class="fas fa-plus-circle me-1"></i> New Subscription
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if subscriptions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Package</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subscription in subscriptions %}
+                                <tr>
+                                    <td>{{ subscription.package.name }}</td>
+                                    <td>{{ subscription.start_date|date:"M d, Y" }}</td>
+                                    <td>{{ subscription.end_date|date:"M d, Y" }}</td>
+                                    <td>KES {{ subscription.amount|intcomma }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if subscription.is_active %}success{% else %}secondary{% endif %}">
+                                            {% if subscription.is_active %}Active{% else %}Expired{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                        <h5>No Subscriptions Found</h5>
+                        <p class="text-muted">This client doesn't have any subscriptions yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payments Tab -->
+        <div class="tab-pane fade" id="payments" role="tabpanel">
+            <div class="card detail-card">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-money-bill-wave me-2"></i> Payment History</span>
+                    <a href="{% url 'transaction_create' %}?client_pk={{ client.pk }}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus-circle me-1"></i> Record Payment
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if payments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Reference</th>
+                                    <th>Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                                    <td>KES {{ payment.amount|intcomma }}</td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                    <td>{{ payment.reference }}</td>
+                                    <td>
+                                        <a href="{% url 'payment_receipt' payment.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-file-pdf me-1"></i> Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                        <h5>No Payments Found</h5>
+                        <p class="text-muted">This client doesn't have any payment records yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transactions Tab -->
+        <div class="tab-pane fade" id="transactions" role="tabpanel">
+            <div class="card detail-card">
+                <div class="card-header bg-dark text-white">
+                    <i class="fas fa-exchange-alt me-2"></i> Transaction History
+                </div>
+                <div class="card-body">
+                    {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Reference</th>
+                                    <th>Processed By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.transaction_date|date:"M d, Y" }}</td>
+                                    <td>{{ transaction.get_transaction_type_display }}</td>
+                                    <td>KES {{ transaction.amount|intcomma }}</td>
+                                    <td>{{ transaction.reference }}</td>
+                                    <td>{{ transaction.processed_by.get_full_name|default:transaction.processed_by.username }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
+                        <h5>No Transactions Found</h5>
+                        <p class="text-muted">This client doesn't have any transaction records yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emailModalLabel">Send Email to {{ client.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'send_client_email' client.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="emailSubject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="emailSubject" name="subject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="emailMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="emailMessage" name="message" rows="5" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- SMS Modal -->
+<div class="modal fade" id="smsModal" tabindex="-1" aria-labelledby="smsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="smsModalLabel">Send SMS to {{ client.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+			<form method="post" action="{% url 'send_client_email' client.pk %}">
+                {% csrf_token %}
+            <form method="post" action="{% url 'send_client_sms' client.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="smsMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="smsMessage" name="message" rows="5" maxlength="160" required></textarea>
+                        <small class="text-muted">160 characters maximum</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send SMS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete this client?</p>
+                <p class="fw-bold">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'client_delete' client.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Client</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Copy IP address to clipboard
+    $('.copy-ip').on('click', function() {
+        const ipAddress = "{{ client.ip_address }}";
+        navigator.clipboard.writeText(ipAddress).then(function() {
+            const tooltip = bootstrap.Tooltip.getInstance(this);
+            tooltip.setContent({'.tooltip-inner': 'Copied!'});
+            setTimeout(() => {
+                tooltip.setContent({'.tooltip-inner': 'Copy to clipboard'});
+            }, 2000);
+        }.bind(this));
+    });
+    
+    // Tab persistence
+    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+        localStorage.setItem('activeClientTab', e.target.getAttribute('aria-controls'));
+    });
+    
+    const activeTab = localStorage.getItem('activeClientTab');
+    if (activeTab) {
+        const tab = document.querySelector(`[aria-controls="${activeTab}"]`);
+        if (tab) {
+            new bootstrap.Tab(tab).show();
+        }
+    }
+    
+    // Initialize modals
+    const emailModal = new bootstrap.Modal(document.getElementById('emailModal'));
+    const smsModal = new bootstrap.Modal(document.getElementById('smsModal'));
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+});
+</script>
+{% endblock %}

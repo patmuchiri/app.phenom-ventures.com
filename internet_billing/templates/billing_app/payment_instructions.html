@@ -1,0 +1,65 @@
+{% extends "billing_app/base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Payment Instructions</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">How to Pay via MPESA</h5>
+        </div>
+        <div class="card-body">
+            <ol class="list-group list-group-numbered mb-3">
+                <li class="list-group-item">Go to MPESA on your phone</li>
+                <li class="list-group-item">Select "Lipa na MPESA"</li>
+                <li class="list-group-item">Select "Paybill"</li>
+                <li class="list-group-item">
+                    Enter Business Number: <strong>{{ MPESA_BUSINESS_SHORTCODE }}</strong>
+                </li>
+                <li class="list-group-item">
+                    Enter Account Number: 
+                    <strong>
+                        {% if client %}{{ client.account_name }}
+                        {% else %}YOUR_ACCOUNT_NUMBER{% endif %}
+                    </strong>
+                </li>
+                <li class="list-group-item">Enter Amount</li>
+                <li class="list-group-item">Enter your MPESA PIN and confirm</li>
+            </ol>
+            
+            <div class="alert alert-info">
+                <p class="mb-0">
+                    <i class="fas fa-info-circle"></i> 
+                    {% if client %}
+                    Your internet will be activated automatically after payment confirmation.
+                    {% else %}
+                    Payments typically process within 15-30 minutes during business hours.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Important Notes</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <i class="fas fa-check-circle text-success"></i>
+                    Processing time: 15-30 minutes (business hours)
+                </li>
+                <li class="list-group-item">
+                    <i class="fas fa-check-circle text-success"></i>
+                    Always use the correct account number
+                </li>
+                <li class="list-group-item">
+                    <i class="fas fa-check-circle text-success"></i>
+                    For payment issues, contact: {{ COMPANY_CONTACT }}
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

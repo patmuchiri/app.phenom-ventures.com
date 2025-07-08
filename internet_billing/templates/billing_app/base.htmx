@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Phenom Ventures - ISP Management{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- Glow effect CSS -->
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --accent-color: #fd79a8;
+            --dark-color: #2d3436;
+            --light-color: #f5f6fa;
+            --success-color: #00b894;
+            --warning-color: #fdcb6e;
+            --danger-color: #d63031;
+            --info-color: #0984e3;
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #2d3436;
+            --bg-secondary: #3a4042;
+            --text-primary: #f5f6fa;
+            --text-secondary: #dfe6e9;
+            --card-bg: #3a4042;
+        }
+        
+        [data-theme="light"] {
+            --bg-primary: #f5f6fa;
+            --bg-secondary: #dfe6e9;
+            --text-primary: #2d3436;
+            --text-secondary: #636e72;
+            --card-bg: #ffffff;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-brand {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card.glow {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card.glow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .card.glow:hover::before {
+            opacity: 0.1;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0.3),
+                rgba(255, 255, 255, 0)
+            );
+            transform: rotate(30deg);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover::after {
+            left: 100%;
+        }
+        
+        /* Pulse animation for notifications */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 6px 25px rgba(108, 92, 231, 0.6);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="position-fixed w-100 h-100 bg-dark bg-opacity-75 d-flex justify-content-center align-items-center" style="z-index: 9999; display: none;">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--dark-color);">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'dashboard' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Phenom Ventures" height="40" class="me-2">
+                <span class="d-none d-sm-inline">Phenom Ventures</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="clientsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-users me-1"></i> Clients
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{% url 'client_list' %}"><i class="fas fa-list me-2"></i> All Clients</a></li>
+                            <li><a class="dropdown-item" href="{% url 'client_create' %}"><i class="fas fa-user-plus me-2"></i> Add New Client</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-filter me-2"></i> Filters</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'transactions' %}">
+                            <i class="fas fa-exchange-alt me-1"></i> Transactions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'reports' %}">
+                            <i class="fas fa-chart-pie me-1"></i> Reports
+                        </a>
+                    </li>
+                    {% if user.is_admin %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-shield me-1"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="{% url 'user_management' %}"><i class="fas fa-users-cog me-2"></i> User Management</a></li>
+                            <li><a class="dropdown-item" href="{% url 'system_logs' %}"><i class="fas fa-clipboard-list me-2"></i> System Logs</a></li>
+                            <li><a class="dropdown-item" href="{% url 'backup_restore' %}"><i class="fas fa-database me-2"></i> Backup/Restore</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <div class="d-flex align-items-center">
+                    <div class="dropdown me-3">
+                        <a href="#" class="text-white dropdown-toggle" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger pulse">
+                                3
+                                <span class="visually-hidden">unread notifications</span>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="notificationsDropdown">
+                            <li><h6 class="dropdown-header">Notifications</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-money-bill-wave text-success me-2"></i> New payment received</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-clock text-warning me-2"></i> 5 clients approaching due date</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-exclamation-triangle text-danger me-2"></i> Service interruption reported</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="#">View all notifications</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="{% static 'images/user-avatar.png' %}" alt="User" width="32" height="32" class="rounded-circle me-2">
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'password_change' %}"><i class="fas fa-key me-2"></i> Change Password</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-none d-md-block">
+                <div class="card sticky-top mb-4" style="top: 80px; z-index: 100;">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-bolt me-2"></i> Quick Actions
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'client_create' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="fas fa-user-plus me-3 text-primary"></i>
+                            <span>Register Client</span>
+                        </a>
+                        <a href="{% url 'quick_payment' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="fas fa-money-bill-wave me-3 text-success"></i>
+                            <span>Record Payment</span>
+                        </a>
+                        {% if user.is_admin %}
+                        <a href="{% url 'user_create' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="fas fa-user-plus me-3 text-info"></i>
+                            <span>Add System User</span>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'bulk_sms' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="fas fa-sms me-3 text-warning"></i>
+                            <span>Send Bulk SMS</span>
+                        </a>
+                        <a href="{% url 'package_management' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <i class="fas fa-box-open me-3 text-secondary"></i>
+                            <span>Manage Packages</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-chart-line me-2"></i> Quick Stats
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Active Clients</h6>
+                            <h4 class="text-success">1,248</h4>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Monthly Revenue</h6>
+                            <h4 class="text-primary">KSh 1,845,320</h4>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Due Today</h6>
+                            <h4 class="text-warning">24</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <main class="col-md-9 col-lg-10 px-md-4">
+                {% if messages %}
+                <div class="row">
+                    <div class="col-12">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3 animate__animated animate__fadeInDown" role="alert">
+                            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab animate__animated animate__bounceIn" id="mainFab">
+        <i class="fas fa-plus"></i>
+    </div>
+    
+    <!-- Fab Options (hidden by default) -->
+    <div class="fab-option" style="bottom: 110px; right: 30px; transform: scale(0); transition: all 0.3s ease;" data-target="client">
+        <i class="fas fa-user-plus"></i>
+    </div>
+    <div class="fab-option" style="bottom: 160px; right: 30px; transform: scale(0); transition: all 0.3s ease;" data-target="payment">
+        <i class="fas fa-money-bill-wave"></i>
+    </div>
+    <div class="fab-option" style="bottom: 210px; right: 30px; transform: scale(0); transition: all 0.3s ease;" data-target="ticket">
+        <i class="fas fa-ticket-alt"></i>
+    </div>
+
+    <!-- Theme Toggle -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-dark text-white">
+                <strong class="me-auto">Theme</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body bg-secondary">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="themeToggle" checked>
+                    <label class="form-check-label" for="themeToggle">Dark Mode</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', currentTheme);
+        themeToggle.checked = currentTheme === 'dark';
+        
+        themeToggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Animate theme transition
+            html.classList.add('theme-transition');
+            setTimeout(() => {
+                html.classList.remove('theme-transition');
+            }, 300);
+        });
+        
+        // Floating action button
+        const fab = document.getElementById('mainFab');
+        const fabOptions = document.querySelectorAll('.fab-option');
+        let fabOpen = false;
+        
+        fab.addEventListener('click', function() {
+            fabOpen = !fabOpen;
+            
+            if (fabOpen) {
+                this.innerHTML = '<i class="fas fa-times"></i>';
+                this.style.transform = 'rotate(45deg)';
+                
+                fabOptions.forEach((option, index) => {
+                    setTimeout(() => {
+                        option.style.transform = 'scale(1)';
+                    }, index * 100);
+                });
+            } else {
+                this.innerHTML = '<i class="fas fa-plus"></i>';
+                this.style.transform = 'rotate(0)';
+                
+                fabOptions.forEach(option => {
+                    option.style.transform = 'scale(0)';
+                });
+            }
+        });
+        
+        // Fab option clicks
+        fabOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const target = this.getAttribute('data-target');
+                
+                switch(target) {
+                    case 'client':
+                        window.location.href = "{% url 'client_create' %}";
+                        break;
+                    case 'payment':
+                        window.location.href = "{% url 'quick_payment' %}";
+                        break;
+                    case 'ticket':
+                        window.location.href = "#";
+                        break;
+                }
+            });
+        });
+        
+        // Loading overlay for AJAX requests
+        $(document).ajaxStart(function(){
+            $('#loading-overlay').fadeIn();
+        }).ajaxStop(function(){
+            $('#loading-overlay').fadeOut();
+        });
+        
+        // Initialize tooltips
+        $(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip()
+        });
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

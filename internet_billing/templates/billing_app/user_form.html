@@ -1,0 +1,224 @@
+{% extends "billing_app/base.html" %}
+{% load widget_tweaks static %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">
+                <i class="fas {% if object %}fa-user-edit{% else %}fa-user-plus{% endif %} me-2"></i>
+                {% if object %}Edit{% else %}Create{% endif %} User
+            </h2>
+        </div>
+        
+        <div class="card-body">
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Form Errors</h4>
+                <ul class="mb-0">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <form method="post" novalidate id="user-form" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Basic Information Section -->
+                <fieldset class="mb-4">
+                    <legend class="border-bottom pb-2">
+                        <i class="fas fa-id-card me-2"></i>Basic Information
+                    </legend>
+                    
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            <i class="fas fa-user me-1"></i>Username <span class="text-danger">*</span>
+                        </label>
+                        {{ form.username|add_class:"form-control"|attr:"autocomplete:username" }}
+                        {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.username.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.</small>
+                    </div>
+
+                    <!-- Name Fields -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                <i class="fas fa-signature me-1"></i>First Name
+                            </label>
+                            {{ form.first_name|add_class:"form-control" }}
+                            {% if form.first_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.first_name.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                <i class="fas fa-signature me-1"></i>Last Name
+                            </label>
+                            {{ form.last_name|add_class:"form-control" }}
+                            {% if form.last_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.last_name.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Contact Information Section -->
+                <fieldset class="mb-4">
+                    <legend class="border-bottom pb-2">
+                        <i class="fas fa-address-book me-2"></i>Contact Information
+                    </legend>
+                    
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Email <span class="text-danger">*</span>
+                        </label>
+                        {{ form.email|add_class:"form-control"|attr:"type:email"|attr:"autocomplete:email" }}
+                        {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.email.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="mb-3">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                            <i class="fas fa-phone me-1"></i>Phone Number <span class="text-danger">*</span>
+                        </label>
+                        {{ form.phone_number|add_class:"form-control"|attr:"pattern:\+?\d+"|attr:"title:Enter a valid phone number" }}
+                        <small class="form-text text-muted">
+                            Format: +254712345678 or 0712345678 (no spaces)
+                        </small>
+                        {% if form.phone_number.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.phone_number.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+
+                <!-- Role Information Section -->
+                <fieldset class="mb-4">
+                    <legend class="border-bottom pb-2">
+                        <i class="fas fa-user-tag me-2"></i>Role Information
+                    </legend>
+                    
+                    <!-- Designation -->
+                    <div class="mb-3">
+                        <label for="{{ form.designation.id_for_label }}" class="form-label">
+                            <i class="fas fa-briefcase me-1"></i>Designation <span class="text-danger">*</span>
+                        </label>
+                        {{ form.designation|add_class:"form-select" }}
+                        {% if form.designation.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.designation.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status Toggles -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_active|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    <i class="fas fa-power-off me-1"></i>Active Status
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">Designates whether this user should be treated as active.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_staff|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">
+                                    <i class="fas fa-user-shield me-1"></i>Staff Status
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">Designates whether the user can log into this admin site.</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Password Section (Only for new users) -->
+                {% if not object %}
+                <fieldset class="mb-4">
+                    <legend class="border-bottom pb-2">
+                        <i class="fas fa-key me-2"></i>Password
+                    </legend>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Password <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password1|add_class:"form-control"|attr:"autocomplete:new-password" }}
+                            {% if form.password1.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.password1.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                <ul class="ps-3 mb-0">
+                                    <li>Your password can't be too similar to your other personal information.</li>
+                                    <li>Your password must contain at least 8 characters.</li>
+                                    <li>Your password can't be a commonly used password.</li>
+                                    <li>Your password can't be entirely numeric.</li>
+                                </ul>
+                            </small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Confirm Password <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password2|add_class:"form-control"|attr:"autocomplete:new-password" }}
+                            {% if form.password2.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.password2.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Enter the same password as before, for verification.</small>
+                        </div>
+                    </div>
+                </fieldset>
+                {% endif %}
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between mt-4">
+                    <div>
+                        <button type="submit" class="btn btn-primary me-2" id="submit-btn">
+                            <i class="fas fa-save me-1"></i> Save
+                        </button>
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                    {% if object %}
+                    <div>
+						<a href="{% url 'billing_app:change_password' object.id %}" class="btn btn-warning">
+                            <i class="fas fa-key me-1"></i> Change Password
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/user_form.js' %}"></script>
+{% endblock %}

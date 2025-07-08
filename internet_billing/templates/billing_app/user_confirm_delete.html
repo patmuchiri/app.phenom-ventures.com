@@ -1,0 +1,13 @@
+{% extends "billing_app/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Confirm User Deletion</h2>
+    <p>Are you sure you want to delete user "{{ object.username }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

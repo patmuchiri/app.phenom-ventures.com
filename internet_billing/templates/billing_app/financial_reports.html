@@ -1,0 +1,121 @@
+{% extends "billing_app/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-bar me-2"></i> Financial Reports</h2>
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-calendar me-1"></i> Period: {{ period|title }}
+            </button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="?period=daily">Daily</a>
+                <a class="dropdown-item" href="?period=monthly">Monthly</a>
+                <a class="dropdown-item" href="?period=3months">Last 3 Months</a>
+                <a class="dropdown-item" href="?period=6months">Last 6 Months</a>
+                <a class="dropdown-item" href="?period=yearly">Yearly</a>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if view_type == 'list' %}active{% endif %}" href="?view=list">
+                <i class="fas fa-list me-1"></i> List View
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if view_type == 'graph' %}active{% endif %}" href="?view=graph">
+                <i class="fas fa-chart-line me-1"></i> Graphical View
+            </a>
+        </li>
+    </ul>
+
+    {% if view_type == 'list' %}
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">{{ period|title }} Summary</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Transaction Type</th>
+                            <th>Count</th>
+                            <th>Total Amount</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in summary_data %}
+                        <tr>
+                            <td>{{ item.transaction_type }}</td>
+                            <td>{{ item.count }}</td>
+                            <td>{{ item.total_amount|floatformat:2 }}</td>
+                            <td>{{ item.percentage|floatformat:1 }}%</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-primary">
+                            <td><strong>Total</strong></td>
+                            <td><strong>{{ totals.count }}</strong></td>
+                            <td><strong>{{ totals.amount|floatformat:2 }}</strong></td>
+                            <td><strong>100%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">{{ period|title }} Summary</h4>
+            <canvas id="financialChart" height="100"></canvas>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Only initialize chart if in graph view
+        {% if view_type == 'graph' %}
+        const ctx = document.getElementById('financialChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [{% for item in summary_data %}'{{ item.transaction_type }}',{% endfor %}],
+                datasets: [{
+                    label: 'Amount (KES)',
+                    data: [{% for item in summary_data %}{{ item.total_amount }},{% endfor %}],
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Financial Summary by Transaction Type'
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Amount (KES)'
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ COMPANY_NAME }} - ISP Management{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Theme CSS -->
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --success-color: #00b894;
+            --warning-color: #fdcb6e;
+            --danger-color: #d63031;
+            --info-color: #0984e3;
+            --dark-color: #2d3436;
+            --light-color: #f5f6fa;
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #2d3436;
+            --bg-secondary: #3a4042;
+            --text-primary: #f5f6fa;
+            --text-secondary: #dfe6e9;
+            --card-bg: #3a4042;
+        }
+        
+        [data-theme="light"] {
+            --bg-primary: #f5f6fa;
+            --bg-secondary: #dfe6e9;
+            --text-primary: #2d3436;
+            --text-secondary: #636e72;
+            --card-bg: #ffffff;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease;
+        }
+        
+        .navbar {
+            background-color: var(--dark-color) !important;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #5a4bc2;
+            border-color: #5a4bc2;
+        }
+        
+        .table {
+            color: var(--text-primary);
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(108, 92, 231, 0.1);
+        }
+        
+        .alert {
+            border: none;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img src="{% static 'images/logo.jpg' %}" alt="{{ COMPANY_NAME }}" height="40" class="me-2">
+                {{ COMPANY_NAME }}
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'client_list' %}">
+                            <i class="fas fa-users me-1"></i> Clients
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'transaction_list' %}">
+                            <i class="fas fa-exchange-alt me-1"></i> Transactions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'financial_reports' %}">
+                            <i class="fas fa-chart-pie me-1"></i> Reports
+                        </a>
+                    </li>
+                    {% if user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin:index' %}">
+                            <i class="fas fa-user-shield me-1"></i> Admin
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <div class="d-flex">
+                    <div class="dropdown me-3">
+                        <a href="#" class="text-white dropdown-toggle" id="notificationsDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                3
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Notifications</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-money-bill-wave text-success me-2"></i> New payment</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-clock text-warning me-2"></i> Renewals due</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">View all</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <a href="#" class="dropdown-toggle text-white text-decoration-none" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-3">
+        {% if messages %}
+        <div class="row">
+            <div class="col-12">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-3 text-center text-muted">
+        <div class="container">
+            <p class="mb-1">&copy; {% now "Y" %} {{ COMPANY_NAME }}. All rights reserved.</p>
+            <p class="mb-0">v1.0.0</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Theme Toggle Script -->
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.createElement('div');
+        themeToggle.className = 'position-fixed bottom-0 end-0 p-3';
+        themeToggle.style.zIndex = '11';
+        themeToggle.innerHTML = `
+            <div class="toast show">
+                <div class="toast-header bg-dark text-white">
+                    <strong class="me-auto">Theme</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body bg-secondary">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="themeToggle" checked>
+                        <label class="form-check-label" for="themeToggle">Dark Mode</label>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(themeToggle);
+        
+        const html = document.documentElement;
+        const toggle = document.getElementById('themeToggle');
+        
+        // Check for saved theme preference
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', currentTheme);
+        toggle.checked = currentTheme === 'dark';
+        
+        toggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

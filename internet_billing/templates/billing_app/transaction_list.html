@@ -1,0 +1,72 @@
+{% extends "billing_app/base.html" %}
+
+{% block title %}Transaction History{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-history me-2"></i> Transaction History</h2>
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-filter me-1"></i> Filter
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="?status=all">All Transactions</a></li>
+                <li><a class="dropdown-item" href="?status=completed">Completed</a></li>
+                <li><a class="dropdown-item" href="?status=pending">Pending</a></li>
+            </ul>
+			<a href="{% url 'billing_app:payment_form' %}">Make Payment</a>
+                <i class="fas fa-plus me-1"></i> New Payment
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Client</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"M d, Y" }}</td>
+                            <td>{{ transaction.client.name }}</td>
+                            <td>KSh {{ transaction.amount|intcomma }}</td>
+                            <td>{{ transaction.get_payment_method_display }}</td>
+                            <td>
+                                <span class="badge bg-{% if transaction.status == 'completed' %}success{% else %}warning{% endif %}">
+                                    {{ transaction.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'generate_receipt' transaction.id %}" class="btn btn-sm btn-outline-primary" title="Receipt">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
+                                {% if request.user.is_admin %}
+                                <a href="{% url 'transaction_edit' transaction.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">No transactions found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

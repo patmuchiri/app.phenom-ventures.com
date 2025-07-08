@@ -1,0 +1,425 @@
+{% extends "billing_app/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Client - Phenom Ventures{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/form-steps.css' %}">
+<style>
+    .client-form-section {
+        background: linear-gradient(135deg, rgba(108, 92, 231, 0.05) 0%, rgba(253, 121, 168, 0.05) 100%);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border-left: 4px solid #6c5ce7;
+    }
+    
+    .form-header {
+        border-bottom: 2px solid rgba(108, 92, 231, 0.3);
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .form-step {
+        display: none;
+    }
+    
+    .form-step.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .package-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        margin-bottom: 20px;
+    }
+    
+    .package-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .package-card.selected {
+        border-color: #6c5ce7;
+        background-color: rgba(108, 92, 231, 0.1);
+    }
+    
+    .preview-section {
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .speed-badge {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+        border-radius: 20px;
+        background-color: #6c5ce7;
+        color: white;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="client-form-section">
+                <div class="form-header">
+                    <h2><i class="fas fa-user-edit me-2"></i> {% if form.instance.pk %}Edit{% else %}Create New{% endif %} Client</h2>
+                    <p class="text-muted">Fill in the client details below. All fields are required unless marked optional.</p>
+                </div>
+                
+                <form method="post" id="clientForm" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Step Indicator -->
+                    <div class="d-flex justify-content-center mb-4">
+                        <div class="step-indicator">
+                            <div class="step active" id="step1-indicator">1</div>
+                            <div class="step" id="step2-indicator">2</div>
+                            <div class="step" id="step3-indicator">3</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 1: Basic Information -->
+                    <div class="form-step active" id="step1">
+                        <h4 class="mb-4"><i class="fas fa-user-circle me-2"></i> Basic Information</h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.account_name|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.contact|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-navigation mt-4">
+                            <button type="button" class="btn btn-secondary" disabled>Previous</button>
+                            <button type="button" class="btn btn-primary next-step" data-next="step2">Next <i class="fas fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Network Information -->
+                    <div class="form-step" id="step2">
+                        <h4 class="mb-4"><i class="fas fa-network-wired me-2"></i> Network Information</h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.ip_address|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-navigation mt-4">
+                            <button type="button" class="btn btn-secondary prev-step" data-prev="step1"><i class="fas fa-arrow-left me-2"></i> Previous</button>
+                            <button type="button" class="btn btn-primary next-step" data-next="step3">Next <i class="fas fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Package Selection -->
+                    <div class="form-step" id="step3">
+                        <h4 class="mb-4"><i class="fas fa-box-open me-2"></i> Package Selection</h4>
+                        
+                        <div class="row">
+                            <!-- 7Mbps Package -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card package-card" data-package="7mbps" data-upload="6M" data-download="7M" data-price="2500">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Basic</h5>
+                                        <span class="speed-badge">7Mbps</span>
+                                        <h4 class="text-primary my-3">KSh 1,500</h4>
+                                        <p class="card-text small">
+                                            <strong>Upload:</strong> 7Mbps<br>
+                                            <strong>Download:</strong> 7Mbps<br>
+                                            Ideal for light browsing and emails
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 10Mbps Package -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card package-card" data-package="10mbps" data-upload="8M" data-download="10M" data-price="3500">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Standard</h5>
+                                        <span class="speed-badge">10Mbps</span>
+                                        <h4 class="text-primary my-3">KSh 2,000</h4>
+                                        <p class="card-text small">
+                                            <strong>Upload:</strong> 10Mbps<br>
+                                            <strong>Download:</strong> 10Mbps<br>
+                                            Good for streaming and browsing
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 12Mbps Package -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card package-card" data-package="12mbps" data-upload="10M" data-download="12M" data-price="4500">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Premium</h5>
+                                        <span class="speed-badge">12Mbps</span>
+                                        <h4 class="text-primary my-3">KSh 2,500</h4>
+                                        <p class="card-text small">
+                                            <strong>Upload:</strong> 12Mbps<br>
+                                            <strong>Download:</strong> 12Mbps<br>
+                                            Great for HD streaming
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 14Mbps Package -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card package-card" data-package="14mbps" data-upload="12M" data-download="14M" data-price="5500">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Business</h5>
+                                        <span class="speed-badge">14Mbps</span>
+                                        <h4 class="text-primary my-3">KSh 3,000</h4>
+                                        <p class="card-text small">
+                                            <strong>Upload:</strong> 14Mbps<br>
+                                            <strong>Download:</strong> 14Mbps<br>
+                                            Perfect for small businesses
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 15Mbps Package -->
+                            <div class="col-md-4 mb-4">
+                                <div class="card package-card" data-package="15mbps" data-upload="14M" data-download="15M" data-price="6500">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Premium Plus</h5>
+                                        <span class="speed-badge">15Mbps</span>
+                                        <h4 class="text-primary my-3">KSh 4,500</h4>
+                                        <p class="card-text small">
+                                            <strong>Upload:</strong> 15Mbps<br>
+                                            <strong>Download:</strong> 15Mbps<br>
+                                            Best for heavy users and offices
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="package_name" id="selectedPackageName">
+                        <input type="hidden" name="upload_limit" id="uploadLimit">
+                        <input type="hidden" name="download_limit" id="downloadLimit">
+                        <input type="hidden" name="package_price" id="packagePrice">
+                        
+                        <div class="form-navigation mt-4">
+                            <button type="button" class="btn btn-secondary prev-step" data-prev="step2"><i class="fas fa-arrow-left me-2"></i> Previous</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i> {% if form.instance.pk %}Update{% else %}Create{% endif %} Client
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="preview-section">
+                <h4 class="mb-4"><i class="fas fa-eye me-2"></i> Client Preview</h4>
+                <div class="text-center mb-4">
+                    <div class="avatar-preview bg-light rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 120px; height: 120px; margin: 0 auto 20px; font-size: 40px; color: #666;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h4 id="preview-name">{% if form.instance.pk %}{{ form.instance.name }}{% else %}New Client{% endif %}</h4>
+                    <p class="text-muted" id="preview-account">{% if form.instance.pk %}{{ form.instance.account_name }}{% else %}Account name will appear here{% endif %}</p>
+                </div>
+                
+                <div class="client-details-preview">
+                    <div class="mb-3">
+                        <h6>Contact Information</h6>
+                        <p id="preview-contact">
+                            <i class="fas fa-phone me-2"></i> {% if form.instance.pk %}{{ form.instance.contact }}{% else %}--{% endif %}<br>
+                            <i class="fas fa-envelope me-2"></i> {% if form.instance.pk %}{{ form.instance.email }}{% else %}--{% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Network Details</h6>
+                        <p id="preview-network">
+                            <i class="fas fa-network-wired me-2"></i> IP: {% if form.instance.pk %}{{ form.instance.ip_address }}{% else %}--{% endif %}<br>
+                            <i class="fas fa-wifi me-2"></i> Package: {% if form.instance.package_name %}{{ form.instance.package_name }}{% else %}--{% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Bandwidth Limits</h6>
+                        <p id="preview-bandwidth">
+                            <i class="fas fa-upload me-2"></i> Upload: --<br>
+                            <i class="fas fa-download me-2"></i> Download: --
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form step navigation
+    document.querySelectorAll('.next-step').forEach(button => {
+        button.addEventListener('click', function() {
+            const currentStep = this.closest('.form-step');
+            const nextStepId = this.getAttribute('data-next');
+            
+            if (validateStep(currentStep.id)) {
+                currentStep.classList.remove('active');
+                document.getElementById(nextStepId).classList.add('active');
+                
+                // Update step indicator
+                document.querySelector('.step.active').classList.remove('active');
+                document.getElementById(`${nextStepId}-indicator`).classList.add('active');
+            }
+        });
+    });
+    
+    document.querySelectorAll('.prev-step').forEach(button => {
+        button.addEventListener('click', function() {
+            const currentStep = this.closest('.form-step');
+            const prevStepId = this.getAttribute('data-prev');
+            
+            currentStep.classList.remove('active');
+            document.getElementById(prevStepId).classList.add('active');
+            
+            // Update step indicator
+            document.querySelector('.step.active').classList.remove('active');
+            document.getElementById(`${prevStepId}-indicator`).classList.add('active');
+        });
+    });
+    
+    // Package selection
+    document.querySelectorAll('.package-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            // Set hidden fields
+            document.getElementById('selectedPackageName').value = this.getAttribute('data-package');
+            document.getElementById('uploadLimit').value = this.getAttribute('data-upload');
+            document.getElementById('downloadLimit').value = this.getAttribute('data-download');
+            document.getElementById('packagePrice').value = this.getAttribute('data-price');
+            
+            // Update preview
+            const packageName = this.querySelector('.card-title').textContent;
+            const uploadSpeed = this.getAttribute('data-upload');
+            const downloadSpeed = this.getAttribute('data-download');
+            
+            document.getElementById('preview-network').innerHTML = `
+                <i class="fas fa-network-wired me-2"></i> IP: ${document.getElementById('id_ip_address').value || '--'}<br>
+                <i class="fas fa-wifi me-2"></i> Package: ${packageName} (${this.getAttribute('data-package')})
+            `;
+            
+            document.getElementById('preview-bandwidth').innerHTML = `
+                <i class="fas fa-upload me-2"></i> Upload: ${uploadSpeed}<br>
+                <i class="fas fa-download me-2"></i> Download: ${downloadSpeed}
+            `;
+        });
+    });
+    
+    // Real-time preview updates
+    document.getElementById('id_name').addEventListener('input', function() {
+        document.getElementById('preview-name').textContent = this.value || 'New Client';
+    });
+    
+    document.getElementById('id_account_name').addEventListener('input', function() {
+        document.getElementById('preview-account').textContent = this.value || 'Account name will appear here';
+    });
+    
+    document.getElementById('id_contact').addEventListener('input', function() {
+        document.getElementById('preview-contact').innerHTML = `
+            <i class="fas fa-phone me-2"></i> ${this.value || '--'}<br>
+            <i class="fas fa-envelope me-2"></i> ${document.getElementById('id_email').value || '--'}
+        `;
+    });
+    
+    document.getElementById('id_email').addEventListener('input', function() {
+        document.getElementById('preview-contact').innerHTML = `
+            <i class="fas fa-phone me-2"></i> ${document.getElementById('id_contact').value || '--'}<br>
+            <i class="fas fa-envelope me-2"></i> ${this.value || '--'}
+        `;
+    });
+    
+    document.getElementById('id_ip_address').addEventListener('input', function() {
+        const selectedPackage = document.querySelector('.package-card.selected');
+        const packageName = selectedPackage ? selectedPackage.querySelector('.card-title').textContent : '--';
+        const packageSpeed = selectedPackage ? selectedPackage.getAttribute('data-package') : '--';
+        
+        document.getElementById('preview-network').innerHTML = `
+            <i class="fas fa-network-wired me-2"></i> IP: ${this.value || '--'}<br>
+            <i class="fas fa-wifi me-2"></i> Package: ${packageName} ${packageSpeed !== '--' ? `(${packageSpeed})` : ''}
+        `;
+    });
+    
+    // Form validation
+    function validateStep(stepId) {
+        let isValid = true;
+        const step = document.getElementById(stepId);
+        
+        step.querySelectorAll('[required]').forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // Email validation
+        const emailField = step.querySelector('#id_email');
+        if (emailField && emailField.value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailField.value)) {
+                emailField.classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        // IP Address validation in step 2
+        if (stepId === 'step2') {
+            const ipField = document.getElementById('id_ip_address');
+            if (ipField && ipField.value) {
+                const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                if (!ipRegex.test(ipField.value)) {
+                    ipField.classList.add('is-invalid');
+                    isValid = false;
+                }
+            }
+        }
+        
+        return isValid;
+    }
+    
+    // Initialize date field if exists
+    const dateField = document.getElementById('id_installation_date');
+    if (dateField) {
+        dateField.type = 'date';
+    }
+</script>
+{% endblock %}

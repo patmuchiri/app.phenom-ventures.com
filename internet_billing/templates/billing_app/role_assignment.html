@@ -1,0 +1,54 @@
+{% load static %}
+{% extends "base.html" %}
+
+{% block title %}Role Assignment{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-tag me-2"></i>
+                        Role Assignment
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Select User</label>
+                            <select class="form-select" name="user_id">
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Assign Role</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="role" value="admin" id="roleAdmin">
+                                <label class="form-check-label" for="roleAdmin">
+                                    Administrator (Full access)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="role" value="staff" id="roleStaff" checked>
+                                <label class="form-check-label" for="roleStaff">
+                                    Staff (Limited access)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Assign Role
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

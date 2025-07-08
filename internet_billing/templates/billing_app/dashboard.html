@@ -1,0 +1,412 @@
+{% extends "billing_app/base.html" %}
+{% load humanize %}
+
+{% block title %}Dashboard - {{ COMPANY_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Dashboard Overview</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary">Today</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary">This Week</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary">This Month</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary">
+                <i class="fas fa-download me-1"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <!-- Total Clients Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-primary border-4 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h6 class="text-uppercase text-muted mb-2">Total Clients</h6>
+                            <h2 class="mb-0">{{ total_clients|intcomma }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'client_list' %}" class="text-primary text-decoration-none">
+                        View all clients <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Clients Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-success border-4 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h6 class="text-uppercase text-muted mb-2">Active Clients</h6>
+                            <h2 class="mb-0">{{ active_clients|intcomma }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'client_list' %}?status=active" class="text-success text-decoration-none">
+                        View active <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Payments Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-info border-4 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h6 class="text-uppercase text-muted mb-2">Today's Payments</h6>
+                            <h2 class="mb-0">KES {{ today_payments|intcomma }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'transaction_list' %}?date_range=today" class="text-info text-decoration-none">
+                        View transactions <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Payments Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-warning border-4 h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h6 class="text-uppercase text-muted mb-2">Monthly Payments</h6>
+                            <h2 class="mb-0">KES {{ monthly_payments|intcomma }}</h2>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'financial_reports' %}" class="text-warning text-decoration-none">
+                        View reports <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management and Reports Section -->
+    <div class="row mb-4">
+        <!-- User Management Card -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">User Management</h6>
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="fas fa-user-plus me-1"></i> Add User
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Last Login</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.last_login|date:"M d, Y"|default:"Never" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if user.is_active %}success{% else %}danger{% endif %}">
+                                            {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'user_update' user.pk %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger delete-user" data-user-id="{{ user.pk }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        No users found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'user_list' %}" class="btn btn-sm btn-outline-primary">
+                        View All Users
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Card -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Reports</h6>
+                    <a href="{% url 'financial_reports' %}" class="btn btn-sm btn-outline-light">
+                        View All Reports
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'financial_reports' %}?report_type=daily" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Daily Transaction Report</h6>
+                                <small class="text-muted">Today</small>
+                            </div>
+                            <p class="mb-1">Summary of today's financial activities</p>
+                        </a>
+                        <a href="{% url 'financial_reports' %}?report_type=weekly" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Weekly Summary</h6>
+                                <small class="text-muted">This week</small>
+                            </div>
+                            <p class="mb-1">Weekly financial overview and trends</p>
+                        </a>
+                        <a href="{% url 'financial_reports' %}?report_type=monthly" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Monthly Statement</h6>
+                                <small class="text-muted">This month</small>
+                            </div>
+                            <p class="mb-1">Comprehensive monthly financial report</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions and Clients -->
+    <div class="row">
+        <!-- Recent Transactions -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Recent Transactions</h6>
+                        <a href="{% url 'transaction_list' %}" class="btn btn-sm btn-outline-light">View All</a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Client</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                <tr>
+                                    <td>{{ transaction.transaction_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'client_detail' pk=transaction.client.pk %}">
+                                            {{ transaction.client.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ transaction.get_transaction_type_display }}</td>
+                                    <td>KES {{ transaction.amount|intcomma }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if transaction.status == 'COMPLETED' %}success{% elif transaction.status == 'PENDING' %}warning{% else %}danger{% endif %}">
+                                            {{ transaction.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        No recent transactions
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Clients -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Recent Clients</h6>
+                        <a href="{% url 'client_list' %}" class="btn btn-sm btn-outline-light">View All</a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for client in recent_clients %}
+                        <a href="{% url 'client_detail' pk=client.pk %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ client.name }}</h6>
+                                <small>{{ client.join_date|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1 text-muted">{{ client.account_name }}</p>
+                            <small class="text-{% if client.is_active %}success{% else %}danger{% endif %}">
+                                {% if client.is_active %}Active{% else %}Inactive{% endif %}
+                            </small>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item">
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <p>No recent clients</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <a href="{% url 'client_create' %}" class="btn btn-primary w-100 py-3">
+                                <i class="fas fa-user-plus fa-2x mb-2"></i><br>
+                                Add New Client
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <a href="{% url 'transaction_create' %}" class="btn btn-success w-100 py-3">
+                                <i class="fas fa-money-bill-wave fa-2x mb-2"></i><br>
+                                Record Payment
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <button type="button" class="btn btn-info w-100 py-3" data-bs-toggle="modal" data-bs-target="#bulkSmsModal">
+                                <i class="fas fa-sms fa-2x mb-2"></i><br>
+                                Bulk SMS
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'financial_reports' %}" class="btn btn-warning w-100 py-3">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i><br>
+                                View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+{% include "billing_app/modals/add_user_modal.html" %}
+{% include "billing_app/modals/delete_user_modal.html" %}
+{% include "billing_app/modals/bulk_sms_modal.html" %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Delete user confirmation
+    $('.delete-user').click(function() {
+        const userId = $(this).data('user-id');
+        const username = $(this).closest('tr').find('td:first').text();
+        
+        $('#deleteUserId').val(userId);
+        $('#userToDelete').text(username);
+        $('#deleteUserForm').attr('action', `/users/${userId}/delete/`);
+        $('#deleteUserModal').modal('show');
+    });
+    
+    // SMS character counter
+    $('#smsMessage').on('input', function() {
+        const length = $(this).val().length;
+        $('#smsCounter').text(`${length}/160 characters`);
+        if (length > 160) {
+            $('#smsCounter').addClass('text-danger').removeClass('text-muted');
+        } else {
+            $('#smsCounter').removeClass('text-danger').addClass('text-muted');
+        }
+    });
+    
+    // Password confirmation validation
+    $('#userForm').submit(function(e) {
+        if ($('#password1').val() !== $('#password2').val()) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+        }
+    });
+    
+    // Show messages as toast notifications
+    {% if messages %}
+        {% for message in messages %}
+            toastr.{{ message.tags }}('{{ message }}');
+        {% endfor %}
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .quick-action-btn .fa-2x {
+        margin-bottom: 10px;
+    }
+    @media (max-width: 768px) {
+        .quick-action-btn .fa-2x {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}

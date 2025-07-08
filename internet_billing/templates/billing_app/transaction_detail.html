@@ -1,0 +1,118 @@
+{% extends "billing_app/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">Transaction Details</h3>
+                <div class="card-actions">
+                    <a href="{% url 'transaction_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Client:</div>
+                <div class="col-md-8">{{ transaction.client.name }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Type:</div>
+                <div class="col-md-8">{{ transaction.get_transaction_type_display }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Amount:</div>
+                <div class="col-md-8">KES {{ transaction.amount|floatformat:2 }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Date:</div>
+                <div class="col-md-8">{{ transaction.transaction_date|date:"F j, Y H:i" }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Reference:</div>
+                <div class="col-md-8">{{ transaction.reference }}</div>
+            </div>
+            {% if transaction.mpesa_code %}
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">M-Pesa Code:</div>
+                <div class="col-md-8">{{ transaction.mpesa_code }}</div>
+            </div>
+            {% endif %}
+            {% if transaction.notes %}
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Notes:</div>
+                <div class="col-md-8">{{ transaction.notes }}</div>
+            </div>
+            {% endif %}
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Processed By:</div>
+                <div class="col-md-8">{{ transaction.processed_by.get_full_name|default:transaction.processed_by.username }}</div>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+            <div>
+                <a href="{% url 'transaction_update' transaction.pk %}" class="btn btn-primary me-2">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                {% if transaction.transaction_type == 'PAYMENT' %}
+                <a href="{% url 'transaction_receipt' transaction.pk %}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-file-pdf me-1"></i> Download Receipt
+                </a>
+                {% endif %}
+            </div>
+            {% if transaction.transaction_type == 'PAYMENT' %}
+            <button id="emailReceiptBtn" class="btn btn-success">
+                <i class="fas fa-paper-plane me-1"></i> Email Receipt
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailReceiptBtn = document.getElementById('emailReceiptBtn');
+    
+    if (emailReceiptBtn) {
+        emailReceiptBtn.addEventListener('click', function() {
+            // Show loading state
+            const originalText = emailReceiptBtn.innerHTML;
+            emailReceiptBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Preparing...';
+            emailReceiptBtn.disabled = true;
+            
+            // First download the PDF
+            const pdfUrl = "{% url 'transaction_receipt' transaction.pk %}";
+            const pdfWindow = window.open(pdfUrl, '_blank');
+            
+            // Prepare email details
+            const clientEmail = "{{ transaction.client.email }}";
+            const subject = `Payment Receipt - {{ transaction.reference }}`;
+            const body = `Dear {{ transaction.client.name }},\n\n` +
+                        `Please find attached your payment receipt.\n\n` +
+                        `Amount: KES {{ transaction.amount|floatformat:2 }}\n` +
+                        `Reference: {{ transaction.reference }}\n\n` +
+                        `Thank you for your business!\n\n` +
+                        `Phenom Ventures Billing Department`;
+            
+            // Open email client after short delay
+            setTimeout(() => {
+                const mailtoUrl = `mailto:${clientEmail}?` +
+                                 `subject=${encodeURIComponent(subject)}&` +
+                                 `body=${encodeURIComponent(body)}&` +
+                                 `cc=billing@phenom-ventures.com`;
+                window.location.href = mailtoUrl;
+                
+                // Restore button state
+                emailReceiptBtn.innerHTML = originalText;
+                emailReceiptBtn.disabled = false;
+            }, 1000);
+        });
+    }
+});
+</script>
+{% endblock %}

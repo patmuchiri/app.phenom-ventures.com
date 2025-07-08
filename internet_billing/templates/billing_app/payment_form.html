@@ -1,0 +1,41 @@
+{% load static %}
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Record Payment{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        Record Payment
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Select Client</label>
+                            <select class="form-select" name="client_id" required>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.name }} ({{ client.account_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {{ form|crispy }}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle me-1"></i> Record Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'billing_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="text-center">
+    <h1>Welcome to {{ COMPANY_NAME }} Billing System</h1>
+    <p class="lead">Please log in to access the system</p>
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Login</a>
+</div>
+{% endblock %}

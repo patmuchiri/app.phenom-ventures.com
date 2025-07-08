@@ -1,0 +1,112 @@
+{% extends "billing_app/base.html" %}
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Client Details</h3>
+            <div class="card-actions">
+                <a href="{% url 'client_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Name:</div>
+                <div class="col-md-8">{{ client.name }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Account Name:</div>
+                <div class="col-md-8">{{ client.account_name }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Email:</div>
+                <div class="col-md-8">{{ client.email }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Contact:</div>
+                <div class="col-md-8">{{ client.contact }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">IP Address:</div>
+                <div class="col-md-8">{{ client.ip_address }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Package:</div>
+                <div class="col-md-8">{{ client.package_name }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Status:</div>
+                <div class="col-md-8">
+                    <span class="badge bg-{% if client.is_active %}success{% else %}danger{% endif %}">
+                        {% if client.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Balance:</div>
+                <div class="col-md-8">KES {{ client.account_balance|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'client_update' client.pk %}" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            <a href="{% url 'client_toggle_status' client.pk %}" class="btn btn-{% if client.is_active %}warning{% else %}success{% endif %} me-2">
+                <i class="fas fa-power-off me-1"></i> {% if client.is_active %}Deactivate{% else %}Activate{% endif %}
+            </a>
+            <a href="{% url 'transaction_create' %}?client_pk={{ client.pk }}" class="btn btn-info">
+                <i class="fas fa-plus me-1"></i> Add Transaction
+            </a>
+        </div>
+    </div>
+
+    <!-- Client Transactions Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4 class="card-title">Recent Transactions</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Reference</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in client.transactions.all|slice:":10" %}
+                        <tr>
+                            <td>{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
+                            <td>{{ transaction.get_transaction_type_display }}</td>
+                            <td>KES {{ transaction.amount|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'transaction_detail' transaction.pk %}">
+                                    {{ transaction.reference }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if transaction.status == 'completed' %}success{% else %}warning{% endif %}">
+                                    {{ transaction.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No transactions found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'transaction_list' %}?client={{ client.pk }}" class="btn btn-outline-primary mt-3">
+                View All Transactions
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

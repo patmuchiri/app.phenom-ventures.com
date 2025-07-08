@@ -1,0 +1,39 @@
+{% load static %}
+{% extends 'billing_app/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Welcome, {{ request.user.username }}</h2>
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Clients</h5>
+                    <p class="card-text">Manage your clients and subscriptions</p>
+                    <a href="{% url 'client_list' %}" class="btn btn-primary">View Clients</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Transactions</h5>
+                    <p class="card-text">View and record payments</p>
+                    <a href="{% url 'transaction_list' %}" class="btn btn-primary">View Transactions</a>
+                </div>
+            </div>
+        </div>
+        {% if request.user.is_admin %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Administration</h5>
+                    <p class="card-text">System configuration</p>
+                    <a href="{% url 'admin:index' %}" class="btn btn-danger">Admin Panel</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
